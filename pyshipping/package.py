@@ -15,7 +15,7 @@ import unittest
 class Package(object):
     """Represents a package as used in cargo/shipping aplications."""
 
-    def __init__(self, size, weight=0, nosort=False):
+    def __init__(self, size, weight=0, maxweight=0, nosort=False):
         """Generates a new Package object.
 
         The size can be given as an list of integers or an string where the sizes are
@@ -26,6 +26,7 @@ class Package(object):
         <Package 500x400x300>
         """
         self.weight = weight
+        self.maxweight = maxweight
         if "x" in size:
             self.heigth, self.width, self.length = [int(x) for x in size.split('x')]
         else:

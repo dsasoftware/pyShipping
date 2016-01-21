@@ -40,8 +40,9 @@ Copyright (c) 2010 HUDORA. All rights reserved.
 import time
 import random
 
+from .package import Package
 
-def packstrip(bin, p):
+def packstrip(bin, p, contentweight):
     """Creates a Strip which fits into bin.
 
     Returns the Packages to be used in the strip, the dimensions of the strip as a 3-tuple
@@ -51,33 +52,37 @@ def packstrip(bin, p):
     s = []                # strip
     r = []                # rest
     ss = sw = sl = 0      # stripsize
+    currentweight = contentweight
     bs = bin.heigth       # binsize
+    bin_maxweight = bin.maxweight       # binsize
     sapp = s.append       # speedup
     rapp = r.append       # speedup
     ppop = p.pop          # speedup
     while p and (ss <= bs):
         n = ppop(0)
         nh, nw, nl = n.size
-        if ss + nh <= bs:
+        if ss + nh <= bs and currentweight + n.weight <= bin_maxweight:
             ss += nh
             sapp(n)
+            currentweight += n.weight
             if nw > sw:
                 sw = nw
             if nl > sl:
                 sl = nl
         else:
             rapp(n)
-    return s, (ss, sw, sl), r + p
+    return s, (ss, sw, sl, currentweight), r + p
 
 
-def packlayer(bin, packages):
+def packlayer(bin, packages, contentweight):
     strips = []
     layersize = 0
     layerx = 0
     layery = 0
+    currentweight = contentweight
     binsize = bin.width
     while packages:
-        strip, (sizex, stripsize, sizez), rest = packstrip(bin, packages)
+        strip, (sizex, stripsize, sizez, newweight), rest = packstrip(bin, packages, currentweight)
         if layersize + stripsize <= binsize:
             packages = rest
             if not strip:
@@ -86,12 +91,13 @@ def packlayer(bin, packages):
             layersize += stripsize
             layerx = max([sizex, layerx])
             layery = max([sizez, layery])
+            currentweight = newweight
             strips.extend(strip)
         else:
             # Next Layer please
             packages = strip + rest
             break
-    return strips, (layerx, layersize, layery), packages
+    return strips, (layerx, layersize, layery, currentweight), packages
 
 
 def packbin(bin, packages):
@@ -100,9 +106,10 @@ def packbin(bin, packages):
     contentheigth = 0
     contentx = 0
     contenty = 0
+    contentweight = 0
     binsize = bin.length
     while packages:
-        layer, (sizex, sizey, layersize), rest = packlayer(bin, packages)
+        layer, (sizex, sizey, layersize, currentweight), rest = packlayer(bin, packages, contentweight)
         if contentheigth + layersize <= binsize:
             packages = rest
             if not layer:
@@ -112,6 +119,7 @@ def packbin(bin, packages):
             contentx = max([contentx, sizex])
             contenty = max([contenty, sizey])
             layers.extend(layer)
+            contentweight = currentweight
         else:
             # Next Bin please
             packages = layer + rest
@@ -234,5 +242,3 @@ if __name__ == '__main__':
     import cProfile
     cProfile.run('test()')
 
-
-from pyshipping.package import Package
