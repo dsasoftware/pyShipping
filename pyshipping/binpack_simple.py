@@ -179,6 +179,8 @@ def allpermutations_helper(permuted, todo, maxcounter, callback, bin, bestpack, 
             if thispackage in bin:
                 counter = allpermutations_helper(permuted + [thispackage], others, maxcounter, callback,
                                                  bin, bestpack, counter)
+            else:
+                counter += 1
             if counter > maxcounter:
                 raise Timeout('more than %d iterations tries' % counter)
         return counter
